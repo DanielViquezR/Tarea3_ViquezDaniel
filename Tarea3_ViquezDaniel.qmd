@@ -6,27 +6,45 @@ format:
     code-fold: false
     code-copy: true
 execute:
+  echo: false
   warning: false
   message: false
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
-```
-
-You can add options to executable code like this
-
 ```{r}
 #| echo: false
-2 * 2
+
+library(dplyr)
+library(ggplot2)
+
+source("cod/funciones_tarea3.R")
+
+datos <- read.csv(
+  "data/transacciones_2025.csv",
+  sep = ";"
+)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+resultado <- alerta.movil(datos,5,2)
+resultado.comun <- alerta.movil(datos,7,2)
+
+resultado.1a <- sum(resultado$alerta == "TRUE",na.rm = TRUE)
+resultado.1b <- resultado$fecha[which(resultado$alerta)[1]]
+resultado.1c <- sum(resultado.comun$alerta == "TRUE",na.rm = TRUE)
+```
+
+```{r}
+cat(
+  "RESULTADO_1A =", resultado.1a, "\n",
+  "RESULTADO_1B =", resultado.1b, "\n",
+  "RESULTADO_1C =", resultado.1c, "\n",
+  sep = ""
+)
+```
+
+
+
+
+
