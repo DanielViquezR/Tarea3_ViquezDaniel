@@ -45,10 +45,10 @@ cat(
 ```
 
 
-# Ejercicio 1 - Alertas por ventana móvil.
+
 ```{r}
 
-#| echo: false
+#| include: false
 #| fig-width: 11
 #| fig-height: 5
 
@@ -73,10 +73,9 @@ grafico.alertas <- ggplot(resultado, aes(x = fecha, y = n.tx)) +
   ) +
   theme_minimal()
 
-grafico.alertas
+
 ```
 
-Durante el año 2025, el numero de transacciones presenta variaciones y cambios de nivel a lo largo del año. Los puntos rojos representan los dias con alerta, al superar los parametros dados. Estas alertas representan comportamientos inusuales.
 
 
 
