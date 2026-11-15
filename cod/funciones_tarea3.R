@@ -31,4 +31,52 @@ alerta.movil <-  function(df,ventana,k.alerta){
       datos.diarios$alerta[t] <- datos.diarios$n.tx[t] > datos.diarios$media[t] +k.alerta *datos.diarios$desv[t]
     }
     return(datos.diarios)
-  }
+}
+
+
+
+# Función: benford.mad
+# Recibe : vector de montos
+# Devuelve la desv abs media usando la ley de bendford.
+
+
+benford.mad <-  function(x){
+  digitos <- floor(x / 10^floor(log10(x)))
+  frecuencia <-  tabulate(digitos ,nbins=9)
+  proporciones <- frecuencia /length(digitos)
+  
+  d <-  1:9
+  benford <-  log10(1+1/d)
+  mad <- mean(abs(proporciones - benford)) 
+  return(mad)
+}
+
+
+# Benford cantón
+# Recibe: transacciones, canal y tabla de cantones
+# Devuelve: tabla por cantón con n, MAD y clasificación
+
+
+benford.canton <- function(df, canal, cantones) {
+  resultado <- df %>%
+    filter(.data$canal == .env$canal) %>%
+    group_by(cod_canton) %>%
+    summarise(
+      n = n(),
+      mad = benford.mad(monto_crc),
+      .groups = "drop"
+    ) %>%
+    left_join(cantones, by = "cod_canton") %>%
+    mutate(
+      clase = case_when(
+        mad <= 0.006 ~ "conformidad cercana",
+        mad <= 0.012 ~ "conformidad aceptable",
+        mad <= 0.015 ~ "conformidad marginal",
+        TRUE ~ "no conformidad"
+      )
+    ) %>%
+    select(cod_canton, canton, n, mad, clase) %>%
+    arrange(desc(mad))
+  
+  return(resultado)
+}
