@@ -1,5 +1,5 @@
 ---
-title: "Tarea 3"
+title: "Tarea 3_ViquezDaniel"
 format:
   html:
     embed-resources: true
@@ -16,6 +16,7 @@ execute:
 
 library(dplyr)
 library(ggplot2)
+library(tidyr)
 source("cod/funciones_tarea3.R")
 
 datos <- read.csv(
@@ -43,6 +44,14 @@ resultado.2a <- round(benford.mad(datos$monto_crc[datos$canal == "Sucursal"]),4)
 resultado.2b <- head(resultado.benford$canton,1)
 resultado.2c <- sum(resultado.benford$mad > 0.015)
 resultado.2d <- head(resultado.web$canton,1)
+
+
+resultado.3 <- valor.acumulado(datos, 0.05, "App")
+
+resultado.3a <- round(resultado.3$va,2)
+resultado.3b <- round(resultado.3$interes,2)
+resultado.3c <- valor.acumulado(datos,0.06,"App")$va
+
 ```
 
 ```{r}
@@ -50,22 +59,26 @@ cat(
   "RESULTADO_1A =", resultado.1a, "\n",
   "RESULTADO_1B =", resultado.1b, "\n",
   "RESULTADO_1C =", resultado.1c, "\n",
-  "RESULTADO_2A =", resultado.2a, "\n",
+  "RESULTADO_2A =", sprintf("%.4f", resultado.2a), "\n",
   "RESULTADO_2B =", resultado.2b, "\n",
   "RESULTADO_2C =", resultado.2c, "\n",
   "RESULTADO_2D =", resultado.2d, "\n",
+  "RESULTADO_3A =", sprintf("%.2f", resultado.3a), "\n",
+  "RESULTADO_3B =", sprintf("%.2f", resultado.3b), "\n",
+  "RESULTADO_3C =", resultado.3c, "\n",
   sep = ""
 )
+
 ```
 
 
 
 ```{r}
-
 #| include: false
 #| fig-width: 11
 #| fig-height: 5
 
+# Ejercicio 1: Alertas
 resultado$fecha <- as.Date(resultado$fecha)
 canal.benford <- parametros$valor[
   parametros$parametro == "canal.benford"
@@ -92,13 +105,13 @@ grafico.alertas <- ggplot(resultado, aes(x = fecha, y = n.tx)) +
 
 ```
 
-# Ejercicio 2 : Ley de Benford por cantón.
+
 ```{r}
-#| include: True
+#| include: false
 #| fig-width: 11
 #| fig-height: 5
 
-
+# Ejercicio 2 : Ley de Benford por cantón.
 montos <- datos$monto_crc[datos$canal == canal.benford]
 
 digitos <- floor(montos / 10^floor(log10(montos)))
@@ -146,8 +159,62 @@ ggsave(
   dpi = 300
 )
 
+# Interpretacion:
+
+#Los cantones con mayor MAD presentan pocas transacciones, como Montes de Oca, por lo que sus desviaciones podrian deberese a el tamaño tan reducido de sus muestras, por lo que no constituye evidencia de fraude.
 
 ```
 
-Los cantones con mayor MAD presentan pocas transacciones, como Montes de Oca, por lo que sus desviaciones podrian deberese a el tamaño tan reducido de sus muestras, por lo que no constituye evidencia de fraude.
+```{r}
+tabla.grafico.3 <- resultado.3$tabla %>%
+  mutate(
+    valor.acumulado = monto * factor,
+    mes = factor(
+      mes,
+      levels = 1:12,
+      labels = c("Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                 "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+    )
+  ) %>%
+  pivot_longer(
+    cols = c(monto, valor.acumulado),
+    names_to = "tipo",
+    values_to = "valor"
+  ) %>%
+  mutate(
+    tipo = recode(
+      tipo,
+      monto = "Monto mensual",
+      valor.acumulado = "Valor acumulado"
+    )
+  )
+
+grafico.3 <- ggplot(
+  tabla.grafico.3,
+  aes(x = mes, y = valor / 1e6, fill = tipo)
+) +
+  geom_col(position = "dodge", width = 0.75) +
+  scale_fill_manual(
+    values = c(
+      "Monto mensual" = "#287D8E",
+      "Valor acumulado" = "#C0504D"
+    )
+  ) +
+  labs(
+    title = "Montos mensuales y valores acumulados",
+    subtitle = "Canal App, tasa efectiva anual del 5 %",
+    x = "Mes",
+    y = "Millones de colones",
+    fill = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+
+
+
+```
+
 
