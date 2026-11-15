@@ -16,6 +16,7 @@ execute:
 
 library(dplyr)
 library(ggplot2)
+library(tidyr)
 source("cod/funciones_tarea3.R")
 
 datos <- read.csv(
@@ -164,5 +165,56 @@ ggsave(
 
 ```
 
+```{r}
+tabla.grafico.3 <- resultado.3$tabla %>%
+  mutate(
+    valor.acumulado = monto * factor,
+    mes = factor(
+      mes,
+      levels = 1:12,
+      labels = c("Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                 "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+    )
+  ) %>%
+  pivot_longer(
+    cols = c(monto, valor.acumulado),
+    names_to = "tipo",
+    values_to = "valor"
+  ) %>%
+  mutate(
+    tipo = recode(
+      tipo,
+      monto = "Monto mensual",
+      valor.acumulado = "Valor acumulado"
+    )
+  )
+
+grafico.3 <- ggplot(
+  tabla.grafico.3,
+  aes(x = mes, y = valor / 1e6, fill = tipo)
+) +
+  geom_col(position = "dodge", width = 0.75) +
+  scale_fill_manual(
+    values = c(
+      "Monto mensual" = "#287D8E",
+      "Valor acumulado" = "#C0504D"
+    )
+  ) +
+  labs(
+    title = "Montos mensuales y valores acumulados",
+    subtitle = "Canal App, tasa efectiva anual del 5 %",
+    x = "Mes",
+    y = "Millones de colones",
+    fill = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
+
+
+
+```
 
 
