@@ -52,7 +52,7 @@ benford.mad <-  function(x){
 }
 
 
-# Benford cantón
+# Funcion : Benford cantón
 # Recibe: transacciones, canal y tabla de cantones
 # Devuelve: tabla por cantón con n, MAD y clasificación
 
@@ -79,4 +79,34 @@ benford.canton <- function(df, canal, cantones) {
     arrange(desc(mad))
   
   return(resultado)
+}
+
+
+
+# Funcion : Valor acumulado
+
+valor.acumulado <-  function(df, tasa.anual, canal){
+  tasa.mensual <- (1+tasa.anual)^(1/12) - 1
+  
+  datos.canal <-  df[df$canal == canal,]
+  
+  
+  tabla <- datos.canal %>% 
+    mutate(mes = as.integer(format(as.Date(fecha), "%m"))) %>%
+    group_by(mes) %>% 
+    summarise(
+      monto = sum(monto_crc),
+      .groups = "drop"
+    ) %>% 
+    mutate( factor = (1+tasa.mensual)^(12 - mes))
+
+
+va <- sum(tabla$monto *tabla$factor)
+
+interes <-  va - sum(tabla$monto)
+
+return(list(
+  tabla= tabla, tasa.mensual= tasa.mensual, va= va, interes= interes)
+)
+
 }
