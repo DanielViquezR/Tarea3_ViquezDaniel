@@ -16,23 +16,33 @@ execute:
 
 library(dplyr)
 library(ggplot2)
-
 source("cod/funciones_tarea3.R")
 
 datos <- read.csv(
   "data/transacciones_2025.csv",
   sep = ";"
 )
+
+parametros <- read.csv("config/parametros_tarea3.csv", sep = ";")
+cantones <- read.csv("data/cantones.csv")
+
 ```
 
 
 ```{r}
 resultado <- alerta.movil(datos,5,2)
 resultado.comun <- alerta.movil(datos,7,2)
+resultado.web <- benford.canton(datos, "Web", cantones)
+resultado.benford <- benford.canton(datos, "Sucursal", cantones)
+resultado.web <- benford.canton(datos, "Web", cantones)
 
 resultado.1a <- sum(resultado$alerta == "TRUE",na.rm = TRUE)
 resultado.1b <- resultado$fecha[which(resultado$alerta)[1]]
 resultado.1c <- sum(resultado.comun$alerta == "TRUE",na.rm = TRUE)
+resultado.2a <- round(benford.mad(datos$monto_crc[datos$canal == "Sucursal"]),4)
+resultado.2b <- head(resultado.benford$canton,1)
+resultado.2c <- sum(resultado.benford$mad > 0.015)
+resultado.2d <- head(resultado.web$canton,1)
 ```
 
 ```{r}
@@ -40,6 +50,10 @@ cat(
   "RESULTADO_1A =", resultado.1a, "\n",
   "RESULTADO_1B =", resultado.1b, "\n",
   "RESULTADO_1C =", resultado.1c, "\n",
+  "RESULTADO_2A =", resultado.2a, "\n",
+  "RESULTADO_2B =", resultado.2b, "\n",
+  "RESULTADO_2C =", resultado.2c, "\n",
+  "RESULTADO_2D =", resultado.2d, "\n",
   sep = ""
 )
 ```
@@ -53,7 +67,9 @@ cat(
 #| fig-height: 5
 
 resultado$fecha <- as.Date(resultado$fecha)
-
+canal.benford <- parametros$valor[
+  parametros$parametro == "canal.benford"
+]
 grafico.alertas <- ggplot(resultado, aes(x = fecha, y = n.tx)) +
   geom_line(color = "#287D8E", linewidth = 0.5) +
   geom_point(
@@ -76,6 +92,62 @@ grafico.alertas <- ggplot(resultado, aes(x = fecha, y = n.tx)) +
 
 ```
 
+# Ejercicio 2 : Ley de Benford por cantón.
+```{r}
+#| include: True
+#| fig-width: 11
+#| fig-height: 5
 
 
+montos <- datos$monto_crc[datos$canal == canal.benford]
+
+digitos <- floor(montos / 10^floor(log10(montos)))
+
+tabla.grafico <- data.frame(
+  digito = 1:9,
+  observado = tabulate(digitos, nbins = 9) / length(digitos),
+  teorico = log10(1 + 1/(1:9))
+)
+
+grafico.benford <- ggplot(tabla.grafico, aes(x = digito)) +
+  geom_col(
+    aes(y = observado),
+    fill = "#287D8E",
+    width = 0.65
+  ) +
+  geom_line(
+    aes(y = teorico),
+    color = "#C0504D",
+    linewidth = 1
+  ) +
+  geom_point(
+    aes(y = teorico),
+    color = "#C0504D",
+    size = 2
+  ) +
+  scale_x_continuous(breaks = 1:9) +
+  scale_y_continuous(labels = scales::label_percent()) +
+  labs(
+    title = "Distribución del primer dígito",
+    subtitle = paste("Canal:", canal.benford),
+    x = "Primer dígito",
+    y = "Proporción",
+    caption = "Barras: proporciones observadas. Línea: distribución teórica de Benford."
+  ) +
+  theme_minimal()
+
+grafico.benford
+
+ggsave(
+  "info/figuras/benford_ej2.png",
+  plot = grafico.benford,
+  width = 10,
+  height = 5,
+  dpi = 300
+)
+
+
+```
+
+Los cantones con mayor MAD presentan pocas transacciones, como Montes de Oca, por lo que sus desviaciones podrian deberese a el tamaño tan reducido de sus muestras, por lo que no constituye evidencia de fraude.
 
